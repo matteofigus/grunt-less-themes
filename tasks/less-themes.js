@@ -43,10 +43,7 @@ module.exports = function(grunt) {
         async.forEachSeries(options.themes, function(theme, nextTheme) {
             var themePath = options.root +'/'+ options.themeDir +'/'+ theme +'.less';
 
-            var rs = fs.createReadStream(themePath);
-            rs.pipe(fs.createWriteStream(options.themeImport));
-
-            rs.on('end', function(){
+            var rs = fs.createReadStream(themePath).on('end', function(){
 
                 async.forEachSeries(srcFiles, function(f, nextFileObj) {
                     var destFile = options.output +'/'+ f.dest.replace(options.placeholder, theme);
@@ -94,6 +91,8 @@ module.exports = function(grunt) {
                 }, nextTheme);
             });
 
+            rs.pipe(fs.createWriteStream(options.themeImport));
+
         }, done);
     });
 
@@ -105,13 +104,12 @@ module.exports = function(grunt) {
 
         var css;
         var srcCode = grunt.file.read(srcFile);
-
         var parser = new less.Parser(_.pick(options, lessOptions.parse));
 
         parser.parse(srcCode, function(parse_err, tree) {
             if (parse_err) {
                 lessError(parse_err);
-                callback(true, '');
+                return callback(true, '');
             }
 
             try {
